@@ -1,0 +1,282 @@
+<!DOCTYPE html><html lang="en"><head>
+
+    <title>Choosing a WebAssembly Run-Time</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" type="text/css" href="https://blog.colinbreck.com/assets/built/screen.css?v=78eedc215b">
+
+    <meta name="description" content="The security of the platform is critically dependent on the quality of the WebAssembly run-time that implements the sandbox.">
+    <link rel="canonical" href="https://blog.colinbreck.com/choosing-a-webassembly-run-time/">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <link rel="amphtml" href="https://blog.colinbreck.com/choosing-a-webassembly-run-time/amp/">
+    
+    <meta property="og:site_name" content="Colin Breck">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Choosing a WebAssembly Run-Time">
+    <meta property="og:description" content="The security of the platform is critically dependent on the quality of the WebAssembly run-time that implements the sandbox.">
+    <meta property="og:url" content="https://blog.colinbreck.com/choosing-a-webassembly-run-time/">
+    <meta property="og:image" content="https://blog.colinbreck.com/content/images/2023/03/wasm-sandbox-4.png">
+    <meta property="article:published_time" content="2023-03-12T23:09:03.000Z">
+    <meta property="article:modified_time" content="2023-03-24T15:52:48.000Z">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Choosing a WebAssembly Run-Time">
+    <meta name="twitter:description" content="The security of the platform is critically dependent on the quality of the WebAssembly run-time that implements the sandbox.">
+    <meta name="twitter:url" content="https://blog.colinbreck.com/choosing-a-webassembly-run-time/">
+    <meta name="twitter:image" content="https://blog.colinbreck.com/content/images/2023/03/wasm-sandbox-4.png">
+    <meta name="twitter:label1" content="Written by">
+    <meta name="twitter:data1" content="Colin Breck">
+    <meta name="twitter:site" content="@breckcs">
+    <meta property="og:image:width" content="1097">
+    <meta property="og:image:height" content="538">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Colin Breck",
+        "url": "https://blog.colinbreck.com/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://blog.colinbreck.com/favicon.ico",
+            "width": 48,
+            "height": 48
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Colin Breck",
+        "url": "https://blog.colinbreck.com/author/colin-breck/",
+        "sameAs": []
+    },
+    "headline": "Choosing a WebAssembly Run-Time",
+    "url": "https://blog.colinbreck.com/choosing-a-webassembly-run-time/",
+    "datePublished": "2023-03-12T23:09:03.000Z",
+    "dateModified": "2023-03-24T15:52:48.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "https://blog.colinbreck.com/content/images/2023/03/wasm-sandbox-4.png",
+        "width": 1097,
+        "height": 538
+    },
+    "description": "The security of the platform is critically dependent on the quality of the WebAssembly run-time that implements the sandbox.",
+    "mainEntityOfPage": "https://blog.colinbreck.com/choosing-a-webassembly-run-time/"
+}
+    </script>
+
+    <meta name="generator" content="Ghost 5.74">
+    <link rel="alternate" type="application/rss+xml" title="Colin Breck" href="https://blog.colinbreck.com/rss/">
+    
+    <script defer="" src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/sodo-search.min.js" data-key="93873a8c8c5080f5263e4fc321" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/main.css" data-sodo-search="https://cbreck.ghost.io/" crossorigin="anonymous"></script>
+    
+    <link href="https://blog.colinbreck.com/webmentions/receive/" rel="webmention">
+    <script defer="" src="/public/cards.min.js?v=78eedc215b"></script>
+    <link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=78eedc215b">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism-tomorrow.min.css" integrity="sha512-vswe+cgvic/XBoF1OcM/TeJ2FW0OofqAVdCZiEYkd6dwGXthvkSFWOoGGJgS2CW70VK5dQM5Oh+7ne47s74VTg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<style>
+    .article-image {
+        max-width: 725px;
+        margin: 0 auto !important;
+        float: none !important;
+	}
+</style><style>:root {--ghost-accent-color: #15171A;}</style>
+
+<style>.App{text-align:center}.App-logo{height:40vmin;pointer-events:none}@media (prefers-reduced-motion: no-preference){.App-logo{animation:App-logo-spin infinite 20s linear}}.App-header{background-color:#282c34;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:calc(10px + 2vmin);color:#fff}.App-link{color:#61dafb}@keyframes App-logo-spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}
+</style></head>
+<body class="post-template is-head-left-logo has-cover is-dropdown-loaded">
+<div class="viewport">
+
+    <header id="gh-head" class="gh-head outer">
+        <div class="gh-head-inner inner">
+            <div class="gh-head-brand">
+                <a class="gh-head-logo no-image" href="https://blog.colinbreck.com">
+                        Colin Breck
+                </a>
+                <button class="gh-search gh-icon-btn" data-ghost-search=""><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+                <button class="gh-burger"></button>
+            </div>
+
+            <nav class="gh-head-menu">
+                <ul class="nav">
+    <li class="nav-home"><a href="https://blog.colinbreck.com/">Home</a></li>
+    <li class="nav-talks"><a href="https://blog.colinbreck.com/talks/">Talks</a></li>
+</ul>
+
+            </nav>
+
+            <div class="gh-head-actions">
+                        <button class="gh-search gh-icon-btn" data-ghost-search=""><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="site-content">
+        
+
+
+
+<main id="site-main" class="site-main">
+<article class="article post ">
+
+    <header class="article-header gh-canvas">
+
+
+        <h1 class="article-title">Choosing a WebAssembly Run-Time</h1>
+
+
+        <div class="article-byline">
+        <section class="article-byline-content">
+
+
+            <div class="article-byline-meta">
+                <div class="byline-meta-content">
+                    <time class="byline-meta-date" datetime="2023-03-12">Mar 12, 2023</time>
+                </div>
+            </div>
+
+        </section>
+        </div>
+
+            <figure class="article-image">
+                <img srcset="/content/images/size/w300/2023/03/wasm-sandbox-4.png 300w,
+                            /content/images/size/w600/2023/03/wasm-sandbox-4.png 600w,
+                            /content/images/size/w1000/2023/03/wasm-sandbox-4.png 1000w,
+                            /content/images/size/w2000/2023/03/wasm-sandbox-4.png 2000w" sizes="(min-width: 1400px) 1400px, 92vw" src="/content/images/size/w2000/2023/03/wasm-sandbox-4.png" alt="Choosing a WebAssembly Run-Time">
+            </figure>
+
+    </header>
+
+    <section class="gh-content gh-canvas">
+        <!--kg-card-begin: markdown--><p><em><strong>I expand on these ideas in my S4 presentation <a href="https://www.youtube.com/watch?v=oRuSX-FYybU">WebAssembly at the IoT Edge</a>.</strong></em></p>
+<p>As I mentioned in my article <a href="https://blog.colinbreck.com/why-am-i-excited-about-webassembly/">Why Am I Excited About WebAssembly?</a>, selecting a WebAssembly run-time is challenging because there are many to choose from, they have different characteristics, and they are evolving rapidly:</p>
+<blockquote>
+<p>For the edge, Wasmer, Wasmtime, Wasm3, WasmEdge, and others, all seem like viable options that can be used as a library from various programming languages. WebAssembly is portable across run-times, but changing from one host run-time to another would be a major investment once a significant amount of code or tooling has been developed. If WebAssembly is only used for pure functions, however, porting code from one host run-time to another may be relatively straightforward.</p>
+</blockquote>
+<p>In this article, I share my thoughts on selecting a WebAssembly run-time, then I experiment with changing the WebAssembly run-time as a practical example.</p>
+<h2 id="run-time-considerations">Run-Time Considerations</h2>
+<p>Perhaps the most compelling feature of WebAssembly is its sandboxed execution model. However, <em>this means the security of the platform is critically dependent on the quality of the WebAssembly run-time that implements the sandbox</em>.</p>
+<p>V8 is the WebAssembly run-time used by Google Chrome and Node.js. V8 is written in C++, a language that is notoriously prone to security vulnerabilities because developers manage memory directly.<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup> This leads to issues like heap out-of-bounds, use after free, and the use of uninitialized variables. V8 has been around since 2008 and it has received enormous scrutiny given its prominent use. But even with this scrutiny, V8 has had critical security bugs. A Common Vulnerabilities and Exposures (CVE) search returns hundreds of results for V8. Trust in V8 has been built over time, by taking security seriously, openly disclosing vulnerabilities, responding quickly, documenting the <a href="https://www.chromium.org/Home/chromium-security/">security policy</a>, eliminating bugs through tools for static and dynamic analysis, and supporting security research through academic research grants and bug bounty programs. Trust in newer WebAssembly run-times—particularly ones that will be embedded in industrial computing and IoT, controlling critical infrastructure—will be built similarly: over time, through widespread adoption, and through a responsible, responsive, and transparent security process.</p>
+<p>From my perspective, as of this writing, the leading WebAssembly run-time is <a href="https://wasmtime.dev/">Wasmtime</a>. Through a partnership with the <a href="https://bytecodealliance.org/">Bytecode Alliance</a>, Wasmtime has published guidelines for reporting and disclosing security vulnerabilities. Wasmtime has also been intentional about securing dependencies using <code>cargo vet</code> for the Rust programming language, minimizing the use of unsafe code in Rust, using continuous and targeted fuzzing, attempting to formally verify security-critical code, and focusing on strongly-typed APIs that can be statically verified. Nick Fitzgerald wrote an excellent article entitled <a href="https://bytecodealliance.org/articles/security-and-correctness-in-wasmtime">Security and Correctness in Wasmtime</a> expanding on these topics.</p>
+<p>WebAssembly run-times will also benefit from choosing a safe implementation language. V8 was developed in C++ to deliver native performance when safer alternatives did not exist at the time. Both Wasmtime and Wasmer are written in Rust, which delivers native performance in addition to ensuring type-safety and memory-safety at compile-time. Even when unsafe code must be written in Rust, it is preferable to C or C++, in my opinion, because the code is demarked by Rust’s <code>unsafe</code> keyword, and extra scrutiny can be given to these sections of code.<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup></p>
+<p>I am skeptical of WebAssembly run-times that continue to use C or C++, especially without explicitly justifying this decision and publishing guidelines for how they are ensuring the code, including dependencies, is safe. I used both of these programming languages for years and I have a fondness for them, but I believe it is unsafe to continue to develop software in C and C++, especially for critical infrastructure, when alternatives like Rust exist.<sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup> The WebAssembly Micro Runtime (WAMR), a lightweight WebAssembly run-time with a small footprint targeted at embedded environments, is mainly written in C. Like Wasmtime, WAMR is part of the Bytecode Alliance and follows their security policy, but if I am to adopt it, I want to understand more about why it continues to be implemented in C, and all the steps being taken to secure the WebAssembly sandbox.</p>
+<blockquote>
+<p>It makes it very hard to compose software, because even if you and I both know how to write memory-safe C, it’s very hard for us to have an interface boundary where we can agree about who does what.<br>
+—<a href="https://www.infoq.com/presentations/os-rust/">Bryan Cantrill</a> on the dangers of composing code in C.</p>
+</blockquote>
+<p>As of this writing, a CVE search for Wasmtime returns 14 results. A search for Wasmer and WAMR returns zero results. I find it hard to believe that these two projects have never has a security vulnerability and I can’t help but attribute this to the emphasis they have so far placed on reporting and disclosure.</p>
+<h2 id="changing-the-webassembly-run-time">Changing the WebAssembly Run-Time</h2>
+<p>If you start developing with one run-time and another one emerges that has better security, more trust, superior tooling, or improved performance, how difficult would it be to port your existing code to this new run-time? In my article <a href="https://blog.colinbreck.com/webassembly-at-the-iot-edge-a-motivating-example/">WebAssembly at the IoT Edge: A Motivating Example</a> I provided an example using WebAssembly to update code on a point-of-sale terminal without requiring a firmware release. The example in the article used Wasmer as the WebAssembly run-time. Let’s see what would be involved to port the example to Wasmtime.</p>
+<p>The Wasmer code to load the WebAssembly and export the pricing function was as follows:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">let</span> wasm_bytes <span class="token operator">=</span> <span class="token namespace">std<span class="token punctuation">::</span>fs<span class="token punctuation">::</span></span><span class="token function">read</span><span class="token punctuation">(</span><span class="token string">"price_func.wasm"</span><span class="token punctuation">)</span><span class="token operator">?</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> store <span class="token operator">=</span> <span class="token class-name">Store</span><span class="token punctuation">::</span><span class="token function">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> module <span class="token operator">=</span> <span class="token class-name">Module</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>store<span class="token punctuation">,</span> <span class="token operator">&amp;</span>wasm_bytes<span class="token punctuation">)</span><span class="token operator">?</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> import_object <span class="token operator">=</span> <span class="token macro property">imports!</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> instance <span class="token operator">=</span> <span class="token class-name">Instance</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>module<span class="token punctuation">,</span> <span class="token operator">&amp;</span>import_object<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> price_func <span class="token operator">=</span> instance
+    <span class="token punctuation">.</span>exports
+    <span class="token punctuation">.</span><span class="token function">get_native_function</span><span class="token punctuation">::</span><span class="token operator">&lt;</span><span class="token punctuation">(</span><span class="token keyword">i32</span><span class="token punctuation">,</span> <span class="token keyword">i32</span><span class="token punctuation">,</span> <span class="token keyword">i32</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">i32</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token string">"price_func"</span><span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>Using Wasmtime, the code is not much different:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">let</span> engine <span class="token operator">=</span> <span class="token class-name">Engine</span><span class="token punctuation">::</span><span class="token function">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> module <span class="token operator">=</span> <span class="token class-name">Module</span><span class="token punctuation">::</span><span class="token function">from_file</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>engine<span class="token punctuation">,</span> <span class="token string">"price_func.wasm"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> <span class="token keyword">mut</span> store <span class="token operator">=</span> <span class="token class-name">Store</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>engine<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> instance <span class="token operator">=</span> <span class="token class-name">Instance</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token keyword">mut</span> store<span class="token punctuation">,</span> <span class="token operator">&amp;</span>module<span class="token punctuation">,</span> <span class="token operator">&amp;</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> price_func <span class="token operator">=</span> instance
+    <span class="token punctuation">.</span><span class="token function">get_typed_func</span><span class="token punctuation">::</span><span class="token operator">&lt;</span><span class="token punctuation">(</span><span class="token keyword">i32</span><span class="token punctuation">,</span> <span class="token keyword">i32</span><span class="token punctuation">,</span> <span class="token keyword">i32</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">i32</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token keyword">mut</span> store<span class="token punctuation">,</span> <span class="token string">"calculate_price"</span><span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>In the Wasmer example, calling the pricing function looked like this:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">let</span> price <span class="token operator">=</span> price_func
+    <span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span>count<span class="token punctuation">,</span> unit_price<span class="token punctuation">,</span> hour<span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">unwarp</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>Switching to Wasmtime, the calling semantics change to the following:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"> <span class="token keyword">let</span> price <span class="token operator">=</span> price_func
+     <span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token keyword">mut</span> store<span class="token punctuation">,</span> <span class="token punctuation">(</span>count<span class="token punctuation">,</span> unit_price<span class="token punctuation">,</span> hour<span class="token punctuation">)</span><span class="token punctuation">)</span>
+     <span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<p>Overall, pretty similar, and relatively straightforward to change from one run-time to another. Some things worth emphasizing:</p>
+<ul>
+<li>Moving to a new WebAssembly run-time did not require any changes to the WebAssembly itself (i.e., the price function exported from the WebAssembly module).</li>
+<li>The team developing the firmware for the point-of-sale terminal could swap out the WebAssembly run-time without the team developing the billing calculation ever knowing or caring.</li>
+<li>If the team that develops the billing calculation runs the same WebAssembly in the cloud—perhaps using yet another WebAssembly run-time that integrates well with Kubernetes for dynamically scaling workloads and back-testing pricing models—they can continue to do this, even if the run-time used by the firmware is different.</li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>WebAssembly run-times are evolving rapidly and the canonical ones have yet to emerge.<sup class="footnote-ref"><a href="#fn4" id="fnref4">[4]</a></sup> If you invest in WebAssembly as a technology, changing to a different run-time in the future should not be a huge amount of work and many of your investments will be preserved. Most WebAssembly run-times will be comparable, especially with the increasing emphasis on the WebAssembly System Interface (WASI) and the WebAssembly Component Model to help ensure interoperability and portability. However, if a <em>security vulnerability</em> is found in your run-time of choice, this could lead to patching millions of IoT devices in the best-case scenario, or in the worst case, a large-scale disruption to critical infrastructure through cyberattack. Selecting a trusted run-time that has an open disclosure process and makes all attempts to minimize vulnerabilities is of utmost importance.<sup class="footnote-ref"><a href="#fn5" id="fnref5">[5]</a></sup> I commend Wastime for taking the lead with a responsible and transparent security policy. To be relevant, the other run-times need to do the same.</p>
+<hr class="footnotes-sep">
+<section class="footnotes">
+<ol class="footnotes-list">
+<li id="fn1" class="footnote-item"><p>Using smart pointers, like <code>std::unique_ptr</code>, in modern C++ means developers do not have to manage memory as explicitly as they used to, but many C++ projects do not use these patterns. <a href="#fnref1" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn2" class="footnote-item"><p>For example, <a href="https://chromium.googlesource.com/chromium/src/+/master/docs/security/rule-of-2.md">Chromium’s "The Rule Of 2"</a> can be applied: code should never handle more than two of 1) untrustworthy inputs, 2) code written in an unsafe language (e.g., C, C++, or unsafe Rust), and 3) code that runs outside of a sandbox with high privilege. <a href="#fnref2" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn3" class="footnote-item"><p>Adam Crain believes that the adoption of Rust in ICS is inevitable, not just because of security, but because of the productivity. See Adam’s excellent talk from S4: <a href="https://www.youtube.com/watch?v=-NI_FpjilO0">Applying the Rust Programming Language in ICS</a>. <a href="#fnref3" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn4" class="footnote-item"><p>As I said in <a href="https://blog.colinbreck.com/why-am-i-excited-about-webassembly/">Why Am I Excited About WebAssembly?</a>, some consolidation of run-times may eventually be beneficial. <a href="#fnref4" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn5" class="footnote-item"><p>I should add, if you are avoiding WebAssembly out of skepticism for the technology but implementing your own mechanisms for sandboxing, portability, dynamic reloading, etc., I think you are fooling yourself: your code will also have security vulnerabilities, but without the benefit of the scrutiny and support of a large developer community. <a href="#fnref5" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+</section>
+<!--kg-card-end: markdown-->
+    </section>
+
+
+</article>
+</main>
+
+
+
+
+
+    </div>
+
+    <footer class="site-footer outer">
+        <div class="inner">
+            <section class="copyright"><a href="https://blog.colinbreck.com">Colin Breck</a> © 2023</section>
+            <nav class="site-footer-nav">
+                
+            </nav>
+            <div><a href="https://ghost.org/" target="_blank" rel="noopener">Powered by Ghost</a></div>
+        </div>
+    </footer>
+
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous">
+</script>
+<script src="https://blog.colinbreck.com/assets/built/casper.js?v=78eedc215b"></script>
+<script>
+$(document).ready(function () {
+    // Mobile Menu Trigger
+    $('.gh-burger').click(function () {
+        $('body').toggleClass('gh-head-open');
+    });
+    // FitVids - Makes video embeds responsive
+    $(".gh-content").fitVids();
+});
+</script>
+
+<!-- You can safely delete this line if your theme does not require jQuery -->
+<script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/components/prism-core.min.js" integrity="sha512-9khQRAUBYEJDCDVP2yw3LRUQvjJ0Pjx0EShmaQjcHa6AXiOv6qHQu9lCAIR8O+/D8FtaCoJ2c0Tf9Xo7hYH01Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha512-fTl/qcO1VgvKtOMApX2PdZzkziyr2stM65GYPLGuYMnuMm1z2JLJG6XVU7C/mR+E7xBUqCivykuhlzfqxXBXbg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+
+
+<div id="sodo-search-root"></div></body></html>
