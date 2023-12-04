@@ -1,5 +1,6 @@
 annotated-types==0.6.0
 anyio==3.7.1
+beautifulsoup4==4.12.2
 blinker==1.7.0
 certifi==2023.11.17
 click==8.1.7
@@ -22,6 +23,7 @@ pydantic==2.5.2
 pydantic_core==2.14.5
 pyee==11.0.1
 sniffio==1.3.0
+soupsieve==2.5
 SQLAlchemy==2.0.23
 tqdm==4.66.1
 typing_extensions==4.8.0
