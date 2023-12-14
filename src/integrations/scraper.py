@@ -1,9 +1,11 @@
 from typing import List
 import asyncio
-from curator import Curator
+from typing import Optional
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin, urldefrag
-from os import path
+import requests
+import feedparser
+import datetime
 
 
 class Scraper:
@@ -15,31 +17,77 @@ class Scraper:
     5. go to each link and repeat
     """
 
-    def __init__(self, curator: Curator) -> None:
-        self.curator = curator
+    def find_rss_feed(self, url: str) -> str:
+        try:
+            response = requests.get(url)
+            soup = BeautifulSoup(response.content, 'html.parser')
 
-    # should consider using assistance of llm here; may be difficult to
-    # exclude most edge cases otherwise for example "'https://blog.colinbreck.com/page/2/'"
-    # Or -> we need to cache the urls we've already scraped in a set and avoid grabbing those
-    def _should_include_url(self, original_url: str, url: str):
+            for link in soup.find_all('link', type='application/rss+xml'):
+                rss_url = link.get('href')
+                print(f"Found RSS feed: {rss_url}")
+                # Optionally verify the RSS URL here
+
+                return rss_url
+
+        except requests.RequestException as e:
+            print(f"Error: {e}")
+
+    def get_rss_feed(self, base_url: str) -> List[str]:
+        rss_url = self.find_rss_feed(base_url)
+        feed = feedparser.parse(rss_url)
+
+        return feed
+
+    async def find_sitemap_from_robots_txt(self, base_url: str) -> Optional[str]:
+        robots_text_url = urljoin(base_url, "/robots.txt")
+        response = requests.get(robots_text_url)
+
+        if response.status_code == 200:
+            lines = response.text.split("\n")
+
+            for line in lines:
+                if line.startswith("Sitemap:"):
+                    return line.split(": ")[1]
+
+        return None
+
+    async def get_sitemap_url(self, base_url: str) -> Optional[str]:
+        optimistic_site_map_url = urljoin(base_url, "/sitemap.xml")
+
+        response = requests.get(optimistic_site_map_url)
+        if response.status_code == 200:
+            return optimistic_site_map_url
+        elif response.status_code == 404:
+            return await self.find_sitemap_from_robots_txt(base_url)
+
+        return None
+
+    def _should_include_url(self, url: str, original_url: str, seen: set):
         if original_url == url:
             return False
 
         original_parse_result = urlparse(original_url)
         parse_result = urlparse(url)
+        print(f"Parse result: {parse_result}")
 
         if (
-            parse_result.hostname is None
-            or "youtube" in parse_result.hostname
-            or parse_result.hostname != original_parse_result.hostname
+            (parse_result.hostname is None
+             or "youtube" in parse_result.hostname
+             or parse_result.hostname != original_parse_result.hostname
+             or "images" in parse_result.path
+             or "/tag" in parse_result.path
+             or "/tags" in parse_result.path
+             or "/talks" in parse_result.path
+             )
+            or url in seen
         ):
             return False
 
         return True
 
-    async def extract_article_links(self, base_url: str, max_depth=1):
+    async def extract_all_article_links(self, base_url: str, max_depth=1):
+        seen = set()
 
-        links = []
         q = [(base_url, 0)]
 
         while len(q):
@@ -54,24 +102,24 @@ class Scraper:
                 full_url = defragged.url
                 new_depth = depth + 1
 
-                if self._should_include_url(base_url, full_url):
-                    links.append(full_url)
+                if self._should_include_url(base_url, full_url, seen):
+                    seen.add(full_url)
 
                     if new_depth <= max_depth:
                         q.append((full_url, new_depth))
 
-        return links
+        return list(seen)
 
-    async def scrape_article_content(self, url: str):
-        home_page = await self.ascrape_playwright(url)
-        is_full_article = await self.curator.is_full_article(home_page)
+    # async def scrape_article_content(self, url: str):
+    #     home_page = await self.ascrape_playwright(url)
+    #     is_full_article = await self.curator.is_full_article(home_page)
 
-        if is_full_article:
-            print("Full article found...")
-            print(home_page)
-            print()
-        else:
-            print("Looking for full articles elsewhere...")
+    #     if is_full_article:
+    #         print("Full article found...")
+    #         print(home_page)
+    #         print()
+    #     else:
+    #         print("Looking for full articles elsewhere...")
 
     async def ascrape_playwright(self, url) -> str:
         """
@@ -98,17 +146,70 @@ class Scraper:
             await browser.close()
         return results
 
+    # probably need better error handling
+    async def _fetch_sitemap(self, sitemap_url: str) -> str:
+        response = requests.get(sitemap_url)
+
+        if response.status_code == 200:
+            return response.content
+        else:
+            return None
+
+    # for optimization, we need to store the actual content, not just return the links
+    # for now just extract the links
+    async def extract_sitemap_post_links(self, sitemap_url: str, base_url: str) -> list:
+        async def get_urls_from_sitemap_response(content: str) -> List[str]:
+            soup = BeautifulSoup(content, features="xml")
+            return [loc.text for loc in soup.find_all("loc") if self._should_include_url(loc.text, base_url, set())]
+
+        sitemap_response = await self.fetch_sitemap(sitemap_url)
+        sitemaps = BeautifulSoup(
+            sitemap_response, features="xml").find_all("sitemap")
+
+        if len(sitemaps) == 0:
+            return await get_urls_from_sitemap_response(sitemap_response)
+
+        results = []
+        for sitemap in sitemaps:
+            location = sitemap.find("loc").text
+            response = await self.fetch_sitemap(location)
+            urls = await get_urls_from_sitemap_response(response)
+            results.extend(urls)
+
+        return results
+
+    async def scrape_site(self, url: str):
+        sitemap_url = await self.get_sitemap_url(url)
+        if sitemap_url is not None:
+            post_links = await self.extract_sitemap_post_links(sitemap_url, url)
+            return post_links
+        elif sitemap_url is None:
+            return await self.extract_all_article_links(url)
+
 
 if __name__ == "__main__":
     import os
     from llm import LLM
 
     llm = LLM()
-    curator = Curator(llm=llm)
-    scraper = Scraper(curator=curator)
-    site_links = asyncio.run(scraper.extract_article_links(
-        "https://blog.colinbreck.com"))
-    print(site_links)
+    scraper = Scraper()
+    # feed = scraper.get_rss_feed("https://blog.colinbreck.com/")
+
+    # print(feed.feed)
+    # site_links = asyncio.run(scraper.extract_all_article_links(
+    #     "https://martinheinz.dev/"))
+
+    # print(site_links)
+
+    sitemap_url = asyncio.run(
+        scraper.get_sitemap_url("https://blog.colinbreck.com/"))
+    print(f"Sitemap URL: {sitemap_url}")
+
+    posts = asyncio.run(scraper.extract_sitemap_posts(
+        sitemap_url, "https://blog.colinbreck.com/"))
+    print(f"Posts: {posts}")
+
+    # print(posts)
 
     # result = asyncio.run(scraper.scrape_site(
     #     "https://blog.colinbreck.com/an-interview-process-that-works-for-me/"))

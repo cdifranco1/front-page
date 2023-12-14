@@ -2,11 +2,14 @@ from os import path
 import json
 from prompts import ArticlePrompts
 from llm import LLM, ChatCompletionMessage
+from scraper import Scraper
+from typing import List
 
 
 class Curator:
-    def __init__(self, llm: LLM) -> None:
+    def __init__(self, scraper: Scraper, llm: LLM) -> None:
         self.llm = llm
+        self.scraper = scraper
 
     async def is_full_article(self, html_content: str) -> bool:
         system_message = ChatCompletionMessage(
@@ -25,6 +28,17 @@ class Curator:
             return True
 
         return False
+
+    async def gather_articles(self, url: str, limit: int = 5) -> List[dict[str, str]]:
+        article_links = self.scraper.scrape_site(url)
+
+        # create a thread pool, and for each link, check if it's a full article
+        # if it is a full article,
+        #    store in the db, and pass the content with a prompt to the llm
+        #       store llm output in the db
+
+    async def summarize(link: str, content: str) -> str:
+        pass
 
 
 if __name__ == "__main__":

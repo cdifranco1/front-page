@@ -2,9 +2,12 @@ from flask import Flask
 
 from .config import Config
 from .extensions import db
+from dotenv import load_dotenv
 
 
 def create_app(config_class=Config):
+    load_dotenv()
+
     app = Flask(__name__)
     # Use your own URI
     app.config.from_object(config_class)
