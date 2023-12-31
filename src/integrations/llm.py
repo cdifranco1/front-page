@@ -1,6 +1,12 @@
 
-from openai import OpenAI
-from typing import List
+from openai import AsyncOpenAI
+from typing import List, Optional
+
+
+class ArticleChunk:
+    def __init__(self, text: str, embeddings: List[float]) -> None:
+        self.text = text
+        self.embeddings = embeddings
 
 
 class ChatCompletionMessage:
@@ -10,15 +16,24 @@ class ChatCompletionMessage:
 
 
 class LLM:
-    def __init__(self, client: OpenAI = OpenAI()) -> None:
+    def __init__(self, client: AsyncOpenAI = AsyncOpenAI()) -> None:
         self.client = client
 
-    def get_response(self, messages: List[ChatCompletionMessage]) -> str:
-        return self.client.chat.completions.create(
+    async def get_response(self, messages: List[ChatCompletionMessage]) -> str:
+        return await self.client.chat.completions.create(
             temperature=0,
-            response_format={
-                "type": "json_object"
-            },
-            model="gpt-3.5-turbo-1106",
+            # response_format={x
+            #     "type": "json_object"
+            # },
+            model="gpt-3.5-turbo-16k",
             messages=[m.__dict__ for m in messages]
+        )
+
+    async def get_embedding(self, text: str, model="text-embedding-ada-002") -> Optional[str]:
+        """
+        Use openai embedding API to create embeddings for the document.
+        """
+        return await self.client.embeddings.create(
+            model=model,
+            input=[text]
         )

@@ -17,3 +17,17 @@ class ArticlePrompts:
 
         Response:
         """
+
+    ARTICLE_SUMMARIZER_SYSTEM_PROMPT = """
+    You provide an in-depth summaries of html documents you are provided for sophisticated readers on the topics covered.  You respond in json format only.
+    """
+
+    ARTICLE_SUMMARIZER_USER_PROMPT = """
+        Respond with a json object using this schema: 
+        {{"title": string, "summary": string}}
+
+        HTML:
+        {html}
+
+        Response:
+        """
