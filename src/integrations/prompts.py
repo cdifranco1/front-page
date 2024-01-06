@@ -6,8 +6,7 @@ class ArticlePrompts:
     """
 
     ARTICLE_CLASSIFIER_USER_PROMPT = """
-        Given the html below, does this look like the location of a full, unified article? Or, does this look like an html file that may contain articles
-        in the links within it.
+        Given a sample of the web page's html below, does this look like the location of a full, unified article?
 
         Respond with a json object using this schema: 
         {{"is_full_article": boolean}}

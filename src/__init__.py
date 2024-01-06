@@ -5,6 +5,12 @@ from .extensions import db
 from dotenv import load_dotenv
 from flask_cors import CORS
 
+from src.integrations.curator import Curator, Scraper, LLM
+
+db_engine = create_async_engine(
+
+)
+
 
 def create_app(config_class=Config):
     load_dotenv()
@@ -18,7 +24,11 @@ def create_app(config_class=Config):
     db.init_app(app)
 
     with app.app_context():
-        from .repository.model import Document
+        app.llm = LLM()
+        app.scraper = Scraper(llm=app.llm)
+        app.curator = Curator(llm=app.llm, scraper=app.scraper)
+
+        from .repository.model import CanonicalDocument, EmbeddingDocument
         db.create_all()
 
     from .routes import bp as routes_bp

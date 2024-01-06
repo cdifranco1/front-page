@@ -19,13 +19,11 @@ class LLM:
     def __init__(self, client: AsyncOpenAI = AsyncOpenAI()) -> None:
         self.client = client
 
-    async def get_response(self, messages: List[ChatCompletionMessage]) -> str:
+    async def get_response(self, messages: List[ChatCompletionMessage], model: str = "gpt-3.5-turbo-16k", response_format: dict[str, str] = {}) -> str:
         return await self.client.chat.completions.create(
             temperature=0,
-            # response_format={x
-            #     "type": "json_object"
-            # },
-            model="gpt-3.5-turbo-16k",
+            response_format=response_format,
+            model=model,
             messages=[m.__dict__ for m in messages]
         )
 
@@ -33,6 +31,7 @@ class LLM:
         """
         Use openai embedding API to create embeddings for the document.
         """
+        print(f"FETCHING EMBEDDING FOR {text}...")
         return await self.client.embeddings.create(
             model=model,
             input=[text]

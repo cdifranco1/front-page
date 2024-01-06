@@ -5,7 +5,10 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin, urldefrag
 import requests
 import feedparser
-import datetime
+from src.integrations.llm import LLM, ChatCompletionMessage
+from src.integrations.prompts import ArticlePrompts
+import re
+import json
 
 
 class Scraper:
@@ -16,6 +19,9 @@ class Scraper:
     4. if no - use beautiful soup to gather all links
     5. go to each link and repeat
     """
+
+    def __init__(self, llm: LLM) -> None:
+        self.llm = llm
 
     def find_rss_feed(self, url: str) -> str:
         try:
@@ -86,8 +92,43 @@ class Scraper:
         ):
             return False
 
+        # if with_llm_assistance:
+        #     page_response = requests.get(url)
+        #     print(page_response)
+        #     print(page_response.headers["content-type"])
+        #     if page_response.status_code != 200 or "text/html" not in page_response.headers["content-type"]:
+        #         return False
+        #     is_full_article = await self.is_full_article(page_response.text)
+        #     return is_full_article
+        # else:
         return True
 
+    async def is_full_article(self, html_content: str) -> bool:
+        max_tokens = 16385
+        max_text_length_estimate = max_tokens * 3
+ 
+        system_message = ChatCompletionMessage(
+            role="system",
+            content=ArticlePrompts.ARTICLE_CLASSIFIER_SYSTEM_PROMPT
+        )
+        user_message = ChatCompletionMessage(
+            role="user",
+            content=ArticlePrompts.ARTICLE_CLASSIFIER_USER_PROMPT.format(
+                html=html_content[:max_text_length_estimate])
+        )
+        chat_completion = await self.llm.get_response([system_message, user_message], response_format={
+            "type": "json_object"
+        }, model='gpt-3.5-turbo-1106')
+
+        response_json = json.loads(chat_completion.choices[0].message.content)
+
+        if response_json["is_full_article"] == True:
+            return True
+
+        return False
+
+    # We can improve this search to only look for the links most likely to bring us
+    # to a full article
     async def extract_all_article_links(self, base_url: str, max_depth=1) -> List[str]:
         seen = set()
 
@@ -138,12 +179,14 @@ class Scraper:
             await browser.close()
         return results
 
+    # TODO: improve the text extraction to remove newlines
     async def scrape_content(self, url: str) -> str:
         html = await self.ascrape_playwright(url)
         soup = BeautifulSoup(html, "html.parser")
         text = soup.get_text()
+        cleaned = re.sub(r'\s+', ' ', text)
 
-        return text
+        return cleaned
 
     # probably need better error handling
     async def _fetch_sitemap(self, sitemap_url: str) -> str:
@@ -200,7 +243,7 @@ class Scraper:
 
 if __name__ == "__main__":
     import os
-    from llm import LLM
+    from llm import LLM, ChatCompletionMessage
 
     llm = LLM()
     scraper = Scraper()
@@ -212,9 +255,9 @@ if __name__ == "__main__":
 
     # print(site_links)
 
-    sitemap_url = asyncio.run(
-        scraper.get_sitemap_url("https://paulgraham.com"))
-    print(f"Sitemap URL: {sitemap_url}")
+    # sitemap_url = asyncio.run(
+    #     scraper.get_sitemap_url("https://paulgraham.com"))
+    # print(f"Sitemap URL: {sitemap_url}")
 
     post_links = asyncio.run(
         scraper.scrape_site("https://paulgraham.com"))
