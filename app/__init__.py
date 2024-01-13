@@ -38,8 +38,6 @@ def create_app(config=Config):
 
     bp.add_url_rule('/documents', methods=['POST', 'GET'], view_func=DocumentView.as_view(
         'add-document', curator=curator, document_repo=document_repo, llm=llm))
-    bp.add_url_rule('/documents', methods=['GET'], view_func=DocumentView.as_view(
-        'search', curator=curator, document_repo=document_repo, llm=llm))
 
     app.register_blueprint(bp)
 
