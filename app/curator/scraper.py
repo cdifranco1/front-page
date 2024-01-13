@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin, urldefrag
 import requests
 import feedparser
-from src.curator.llm import LLM, ChatCompletionMessage
-from src.curator.prompts import ArticlePrompts
+from app.curator.llm import LLM, ChatCompletionMessage
+from app.curator.prompts import ArticlePrompts
 import re
 import json
 

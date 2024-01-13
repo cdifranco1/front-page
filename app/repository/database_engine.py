@@ -1,5 +1,5 @@
 import asyncpg
-from src.repository.model import CanonicalDocument, EmbeddingDocument
+from app.repository.model import CanonicalDocument, EmbeddingDocument
 import json
 
 

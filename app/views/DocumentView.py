@@ -1,7 +1,7 @@
 from quart.views import MethodView
 from quart import request
-from src.curator.curator import Curator, LLM
-from src.repository.database_engine import DocumentRepository
+from app.curator.curator import Curator, LLM
+from app.repository.database_engine import DocumentRepository
 
 
 class DocumentView(MethodView):

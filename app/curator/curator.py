@@ -2,7 +2,7 @@ import json
 from .prompts import ArticlePrompts
 from .llm import LLM, ChatCompletionMessage
 from .scraper import Scraper
-from src.repository.model import EmbeddingDocument, CanonicalDocument
+from app.repository.model import EmbeddingDocument, CanonicalDocument
 from typing import List, Optional
 from asyncio import TaskGroup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
