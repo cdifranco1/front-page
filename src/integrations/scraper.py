@@ -1,5 +1,4 @@
 from typing import List
-import asyncio
 from typing import Optional
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin, urldefrag
@@ -106,7 +105,7 @@ class Scraper:
     async def is_full_article(self, html_content: str) -> bool:
         max_tokens = 16385
         max_text_length_estimate = max_tokens * 3
- 
+
         system_message = ChatCompletionMessage(
             role="system",
             content=ArticlePrompts.ARTICLE_CLASSIFIER_SYSTEM_PROMPT
@@ -239,39 +238,3 @@ class Scraper:
             return post_links
         elif sitemap_url is None:
             return await self.extract_all_article_links(url)
-
-
-if __name__ == "__main__":
-    import os
-    from llm import LLM, ChatCompletionMessage
-
-    llm = LLM()
-    scraper = Scraper()
-    # feed = scraper.get_rss_feed("https://blog.colinbreck.com/")
-
-    # print(feed.feed)
-    # site_links = asyncio.run(scraper.extract_all_article_links(
-    #     "https://martinheinz.dev/"))
-
-    # print(site_links)
-
-    # sitemap_url = asyncio.run(
-    #     scraper.get_sitemap_url("https://paulgraham.com"))
-    # print(f"Sitemap URL: {sitemap_url}")
-
-    post_links = asyncio.run(
-        scraper.scrape_site("https://paulgraham.com"))
-    print(f"Paul graham article links: {post_links}")
-
-    # print(posts)
-
-    # result = asyncio.run(scraper.scrape_site(
-    #     "https://blog.colinbreck.com/an-interview-process-that-works-for-me/"))
-
-    # current_file_path = os.path.abspath(__file__)
-    # current_directory = os.path.dirname(current_file_path)
-    # output_path = os.path.join(
-    #     current_directory, "html_results/colinbreck_fullarticle.html")
-
-    # with open(output_path, "w") as f:
-    #     f.write(result
