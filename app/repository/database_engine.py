@@ -1,5 +1,6 @@
 import asyncpg
 from src.repository.model import CanonicalDocument, EmbeddingDocument
+import json
 
 
 class DatabaseEngine:
@@ -12,11 +13,15 @@ class DatabaseEngine:
 
     async def execute(self, statement: str, *args) -> None:
         async with self.connection_pool.acquire() as conn:
-            await conn.execute(statement, *args)
+            return await conn.execute(statement, *args)
+
+    async def fetch(self, statement: str, *args) -> None:
+        async with self.connection_pool.acquire() as conn:
+            return await conn.fetch(statement, *args)
 
     async def executemany(self, statement: str, *args) -> None:
         async with self.connection_pool.acquire() as conn:
-            await conn.executemany(statement, *args)
+            return await conn.executemany(statement, *args)
 
     async def close(self):
         return await self.connection_pool.terminate()
@@ -38,3 +43,14 @@ class DocumentRepository:
         rows = [(doc.id, doc.canonical_doc_id, doc.content, f"{doc.embeddings}")
                 for doc in docs]
         await self.db.executemany(statement, rows)
+
+    async def search_docs(self, embeddings: list[float], limit: int = 10):
+        statement = f"""
+        SELECT canonical.url
+        FROM embedding_documents embed_docs inner join canonical_documents canonical on embed_docs.canonical_doc_id = canonical.id
+        ORDER BY embeddings <-> '{embeddings}'
+        LIMIT {limit};
+        """
+        canonical_urls = await self.db.fetch(statement)
+
+        return json.dumps(list(set([r['url'] for r in canonical_urls])))

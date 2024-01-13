@@ -2,14 +2,14 @@ from quart import Quart
 
 from .config import Config
 from dotenv import load_dotenv
-from src.repository.database_engine import DatabaseEngine
+from app.repository.database_engine import DatabaseEngine
 from quart import Blueprint
 
-from src.integrations.llm import LLM
+from app.curator.llm import LLM
 from quart import Blueprint
-from src.integrations.curator import Curator, Scraper
-from src.repository.database_engine import DatabaseEngine, DocumentRepository
-from src.views.DocumentView import DocumentView
+from app.curator.curator import Curator, Scraper
+from app.repository.database_engine import DatabaseEngine, DocumentRepository
+from app.views.DocumentView import DocumentView
 
 
 def create_app(config=Config):
@@ -35,8 +35,15 @@ def create_app(config=Config):
     scraper = Scraper(llm=llm)
     curator = Curator(llm=llm, scraper=scraper)
     document_repo = DocumentRepository(db_engine=app.db_engine)
-    bp.add_url_rule('/add-link', methods=['POST'], view_func=DocumentView.as_view(
-        'add-link', curator=curator, document_repo=document_repo))
+
+    bp.add_url_rule('/documents', methods=['POST', 'GET'], view_func=DocumentView.as_view(
+        'add-document', curator=curator, document_repo=document_repo, llm=llm))
+    bp.add_url_rule('/documents', methods=['GET'], view_func=DocumentView.as_view(
+        'search', curator=curator, document_repo=document_repo, llm=llm))
+
     app.register_blueprint(bp)
 
     return app
+
+
+app = create_app()
