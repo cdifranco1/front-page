@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin, urldefrag
 import requests
 import feedparser
-from app.curator.llm import LLM, ChatCompletionMessage
-from app.curator.prompts import ArticlePrompts
+from app.common.llm import LLM, ChatCompletionMessage
+from app.common.prompts import ArticlePrompts
 import re
 import json
 
@@ -172,7 +172,7 @@ class Scraper:
             try:
                 page = await browser.new_page()
                 await page.goto(url)
-                results = await page.content()  # Simply get the HTML content
+                results = await page.content()
             except Exception as e:
                 results = f"Error: {e}"
             await browser.close()
@@ -181,6 +181,10 @@ class Scraper:
     # TODO: improve the text extraction to remove newlines
     async def scrape_content(self, url: str) -> str:
         html = await self.ascrape_playwright(url)
+
+        if html.startswith("Error"):
+            return None
+
         soup = BeautifulSoup(html, "html.parser")
         text = soup.get_text()
         cleaned = re.sub(r'\s+', ' ', text)

@@ -6,7 +6,6 @@ from langchain.chat_models import ChatOpenAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import List
 from langchain.docstore.document import Document
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 
 

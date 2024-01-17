@@ -15,7 +15,12 @@ class DatabaseEngine:
 
     async def fetch(self, statement: str, *args) -> None:
         async with self.connection_pool.acquire() as conn:
-            return await conn.fetch(statement, *args)
+            try:
+                return await conn.fetch(statement, *args)
+            except Exception as e:
+                print(e.query)
+                print(e.position)
+                raise
 
     async def executemany(self, statement: str, *args) -> None:
         async with self.connection_pool.acquire() as conn:

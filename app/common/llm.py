@@ -1,4 +1,5 @@
 
+import threading
 from openai import AsyncOpenAI
 from typing import List, Optional
 
@@ -31,7 +32,6 @@ class LLM:
         """
         Use openai embedding API to create embeddings for the document.
         """
-        # print(f"FETCHING EMBEDDING FOR {text}...")
         return await self.client.embeddings.create(
             model=model,
             input=[text]
